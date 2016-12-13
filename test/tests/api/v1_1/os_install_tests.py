@@ -1,17 +1,8 @@
 from config.api1_1_config import *
 from config.settings import *
 from modules.logger import Log
-from on_http_api1_1 import NodesApi as Nodes
-from on_http_api1_1 import rest
 from workflows_tests import WorkflowsTests as workflows
-from datetime import datetime
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
-from proboscis.asserts import assert_not_equal
-from proboscis.asserts import assert_is_not_none
-from proboscis import SkipTest
 from proboscis import test
 from proboscis import after_class
 from proboscis import before_class
@@ -283,6 +274,10 @@ class OSInstallTests(object):
 
         self.__update_body(body, options)
         self.__post_workflow(graph_name, nodes, body)
+
+        # test network devices
+        if 'networkDevices' in body['options']['defaults']:
+            self.__test_link_up(body['options']['defaults']['networkDevices'])
 
     @test(enabled=True, groups=['centos-6-5-install.v1.1.test'])
     def test_install_centos_6(self, nodes=[], options=None):

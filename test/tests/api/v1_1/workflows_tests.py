@@ -7,18 +7,12 @@ from on_http_api1_1 import rest
 from modules.logger import Log
 from modules.amqp import AMQPWorker
 from modules.worker import WorkerThread, WorkerTasks
-from datetime import datetime
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import assert_true
 from proboscis.asserts import fail
-from proboscis import SkipTest
 from proboscis import test
 from json import dumps, loads
-import time
 
 LOG = Log(__name__)
 

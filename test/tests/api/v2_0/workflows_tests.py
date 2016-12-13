@@ -5,17 +5,11 @@ from on_http_api2_0 import ApiApi as Api
 from on_http_api2_0 import rest
 from modules.logger import Log
 from modules.amqp import AMQPWorker
-from datetime import datetime
 from proboscis.asserts import assert_equal
-from proboscis.asserts import assert_false
-from proboscis.asserts import assert_raises
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_is_not_none
-from proboscis.asserts import assert_true
-from proboscis import SkipTest
 from proboscis import test
 from json import loads
-import time
 
 LOG = Log(__name__)
 
@@ -48,13 +42,13 @@ class WorkflowsTests(object):
 
     @test(groups=['delete_all_active_workflows_api2'])
     def delete_all_active_workflows(self):
-        """Testing node DELETE:/nodes/identifier/workflows/active"""
+        """Testing node PUT:/nodes/identifier/workflows/action"""
         Api().nodes_get_all()
         nodes = loads(self.__client.last_response.data)
         for node in nodes:
             if node.get('type') == 'compute':
                 id = node.get('id')
-                assert_not_equal(id,None)
+                assert_not_equal(id, None)
                 try:
                     Api().nodes_workflow_action_by_id(id, {'command': 'cancel'})
                 except rest.ApiException as err:
