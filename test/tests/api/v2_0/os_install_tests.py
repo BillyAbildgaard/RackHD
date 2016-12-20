@@ -10,6 +10,9 @@ from json import dumps, loads, load
 from collections import Mapping
 import os
 from on_http_api2_0 import ApiApi as Api
+from modules.amqp import AMQPWorker
+from config.amqp import *
+from modules.worker import WorkerThread, WorkerTasks
 
 LOG = Log(__name__)
 DEFAULT_TIMEOUT_SEC = 5400
@@ -47,12 +50,47 @@ class OSInstallTests(object):
     def __post_workflow(self, graph_name, nodes, body):
         self.__post_workflows(graph_name, timeout_sec=DEFAULT_TIMEOUT_SEC, nodes=nodes, data=body)
 
+    def handle_graph_finish(self,body,message):
+        routeId = message.delivery_info.get('routing_key').split('graph.finished.')[1]
+        assert_not_equal(routeId,None)
+        Api.workflows_get()
+  #      Workflows().workflows_get()
+        workflows = loads(self.__client.last_response.data)
+        message.ack()
+        for w in workflows:
+            injectableName = w['definition'].get('injectableName')
+            if injectableName == self.__graph_name:
+                graphId = w['context'].get('graphId')
+                if graphId == routeId:
+                    nodeid = w['context'].get('target', injectableName)
+                    status = body['status']
+                    if status == 'succeeded' or status == 'failed':
+                        self.__graph_status.append(status)
+                        for task in self.__tasks:
+                            if task.id == nodeid:
+                                task.worker.stop()
+                                task.running = False
+                        msg = {
+                            'graph_name': injectableName,
+                            'target': nodeid,
+                            'status': status,
+                            'route_id': routeId
+                        }
+                        if status == 'failed':
+                            msg['active_task'] = w['tasks']
+                            LOG.error(msg, json=True)
+                        else:
+                            LOG.info(msg, json=True)
+                        break
+
 # cped code
     def __post_workflows(self, graph_name, \
                        timeout_sec=300, nodes=[], data={}, \
                        tasks=[], callback=None, run_now=True):
         self.__graph_name = graph_name
         self.__graph_status = []
+
+        self.__tasks = []
 
         if len(nodes) == 0:
             Api().nodes_get_all()
